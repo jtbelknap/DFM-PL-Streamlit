@@ -1,63 +1,57 @@
 import streamlit as st
+import pandas as pd
 
 st.title("Profit & Loss Model with Manufacturing Tracker")
 
-# Profit & Loss Section
-st.header("Profit & Loss Model")
-st.subheader("Enter Product Line Data")
+# Step 1: Enter product line details (costs, COGS, etc.)
+st.header("Product Line Details (Fixed Costs)")
+st.subheader("Enter the product line data once.")
 
-# Input fields for Product Line 1
-st.write("### Product Line 1")
-sales_p1 = st.number_input("Sales (Product Line 1)", min_value=0.0, value=0.0, key="sales_p1")
-labor_p1 = st.number_input("Labor Costs (Product Line 1)", min_value=0.0, value=0.0, key="labor_p1")
-cogs_p1 = st.number_input("COGS (Product Line 1)", min_value=0.0, value=0.0, key="cogs_p1")
-marketing_p1 = st.number_input("Marketing Costs (Product Line 1)", min_value=0.0, value=0.0, key="marketing_p1")
-gross_profit_p1 = sales_p1 - labor_p1 - cogs_p1 - marketing_p1
+# Input product line details
+labor_cost = st.number_input("Labor Cost per Unit", min_value=0.0, value=0.0, key="labor_cost")
+cogs = st.number_input("COGS per Unit", min_value=0.0, value=0.0, key="cogs")
+marketing_cost = st.number_input("Marketing Cost per Unit", min_value=0.0, value=0.0, key="marketing_cost")
+unit_price = st.number_input("Unit Sale Price", min_value=0.0, value=0.0, key="unit_price")
 
-# Input fields for Product Line 2
-st.write("### Product Line 2")
-sales_p2 = st.number_input("Sales (Product Line 2)", min_value=0.0, value=0.0, key="sales_p2")
-labor_p2 = st.number_input("Labor Costs (Product Line 2)", min_value=0.0, value=0.0, key="labor_p2")
-cogs_p2 = st.number_input("COGS (Product Line 2)", min_value=0.0, value=0.0, key="cogs_p2")
-marketing_p2 = st.number_input("Marketing Costs (Product Line 2)", min_value=0.0, value=0.0, key="marketing_p2")
-gross_profit_p2 = sales_p2 - labor_p2 - cogs_p2 - marketing_p2
+# Step 2: Enter monthly unit sales volumes
+st.header("Monthly Unit Sales Volume")
+months = ["January", "February", "March", "April", "May", "June", 
+          "July", "August", "September", "October", "November", "December"]
 
-# Display Results
-total_revenue = sales_p1 + sales_p2
-total_gross_profit = gross_profit_p1 + gross_profit_p2
+monthly_sales = {}
+for month in months:
+    monthly_sales[month] = st.number_input(f"{month} Sales Volume", min_value=0, value=0, key=f"sales_{month}")
 
-st.write("### P&L Summary")
-st.write(f"Total Revenue: ${total_revenue}")
-st.write(f"Total Gross Profit: ${total_gross_profit}")
+# Step 3: Calculate monthly subtotals
+st.header("Monthly Subtotals")
 
-# Manufacturing Time Tracker Section
-st.header("Manufacturing Time Tracker")
+# Create a DataFrame to display monthly calculations
+data = {
+    "Month": months,
+    "Units Sold": [monthly_sales[month] for month in months],
+    "Revenue": [monthly_sales[month] * unit_price for month in months],
+    "Labor Cost": [monthly_sales[month] * labor_cost for month in months],
+    "COGS": [monthly_sales[month] * cogs for month in months],
+    "Marketing": [monthly_sales[month] * marketing_cost for month in months],
+}
 
-# Input fields for Product Line 1
-st.subheader("Product Line 1")
-machining_p1 = st.number_input("Machining (min/unit)", min_value=0.0, value=0.0, key="machining_p1")
-tumbling_p1 = st.number_input("Tumbling (min/unit)", min_value=0.0, value=0.0, key="tumbling_p1")
-grinding_p1 = st.number_input("Grinding (min/unit)", min_value=0.0, value=0.0, key="grinding_p1")
-assembly_p1 = st.number_input("Assembly (min/unit)", min_value=0.0, value=0.0, key="assembly_p1")
-laser_p1 = st.number_input("Laser (min/unit)", min_value=0.0, value=0.0, key="laser_p1")
-units_p1 = st.number_input("Units per Month (Product Line 1)", min_value=0, value=0, key="units_p1")
+df = pd.DataFrame(data)
+df["Gross Profit"] = df["Revenue"] - (df["Labor Cost"] + df["COGS"] + df["Marketing"])
 
-total_time_p1 = (machining_p1 + tumbling_p1 + grinding_p1 + assembly_p1 + laser_p1) * units_p1
-st.write(f"Total Manufacturing Time for Product Line 1: {total_time_p1} minutes")
+# Display the DataFrame with monthly calculations
+st.dataframe(df)
 
-# Input fields for Product Line 2
-st.subheader("Product Line 2")
-machining_p2 = st.number_input("Machining (min/unit)", min_value=0.0, value=0.0, key="machining_p2")
-tumbling_p2 = st.number_input("Tumbling (min/unit)", min_value=0.0, value=0.0, key="tumbling_p2")
-grinding_p2 = st.number_input("Grinding (min/unit)", min_value=0.0, value=0.0, key="grinding_p2")
-assembly_p2 = st.number_input("Assembly (min/unit)", min_value=0.0, value=0.0, key="assembly_p2")
-laser_p2 = st.number_input("Laser (min/unit)", min_value=0.0, value=0.0, key="laser_p2")
-units_p2 = st.number_input("Units per Month (Product Line 2)", min_value=0, value=0, key="units_p2")
+# Step 4: Display Yearly Totals
+st.header("Yearly Totals")
 
-total_time_p2 = (machining_p2 + tumbling_p2 + grinding_p2 + assembly_p2 + laser_p2) * units_p2
-st.write(f"Total Manufacturing Time for Product Line 2: {total_time_p2} minutes")
+total_revenue = df["Revenue"].sum()
+total_labor_cost = df["Labor Cost"].sum()
+total_cogs = df["COGS"].sum()
+total_marketing = df["Marketing"].sum()
+total_gross_profit = df["Gross Profit"].sum()
 
-# Grand Total Time
-grand_total_time = total_time_p1 + total_time_p2
-st.write(f"### Grand Total Manufacturing Time: {grand_total_time} minutes")
-
+st.write(f"**Total Revenue:** ${total_revenue}")
+st.write(f"**Total Labor Cost:** ${total_labor_cost}")
+st.write(f"**Total COGS:** ${total_cogs}")
+st.write(f"**Total Marketing Cost:** ${total_marketing}")
+st.write(f"**Total Gross Profit:** ${total_gross_profit}")
