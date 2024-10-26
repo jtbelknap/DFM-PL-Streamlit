@@ -1,57 +1,72 @@
 import streamlit as st
 import pandas as pd
 
-st.title("Profit & Loss Model with Manufacturing Tracker")
+st.title("Multi-Product Line Profit & Loss Model")
 
-# Step 1: Enter product line details (costs, COGS, etc.)
-st.header("Product Line Details (Fixed Costs)")
-st.subheader("Enter the product line data once.")
+# Step 1: Enter the number of product lines
+st.sidebar.header("Configuration")
+num_products = st.sidebar.number_input("Number of Product Lines", min_value=1, value=2, step=1)
 
-# Input product line details
-labor_cost = st.number_input("Labor Cost per Unit", min_value=0.0, value=0.0, key="labor_cost")
-cogs = st.number_input("COGS per Unit", min_value=0.0, value=0.0, key="cogs")
-marketing_cost = st.number_input("Marketing Cost per Unit", min_value=0.0, value=0.0, key="marketing_cost")
-unit_price = st.number_input("Unit Sale Price", min_value=0.0, value=0.0, key="unit_price")
+# Step 2: Input for each product line’s details (name, unit price, costs)
+product_data = []
+for i in range(num_products):
+    st.subheader(f"Product Line {i + 1} Details")
+    product_name = st.text_input(f"Product Line {i + 1} Name", key=f"name_{i}")
+    unit_price = st.number_input(f"Unit Sale Price ({product_name})", min_value=0.0, value=0.0, key=f"price_{i}")
+    labor_cost = st.number_input(f"Labor Cost per Unit ({product_name})", min_value=0.0, value=0.0, key=f"labor_{i}")
+    cogs = st.number_input(f"COGS per Unit ({product_name})", min_value=0.0, value=0.0, key=f"cogs_{i}")
+    marketing_cost = st.number_input(f"Marketing Cost per Unit ({product_name})", min_value=0.0, value=0.0, key=f"marketing_{i}")
+    product_data.append({
+        "name": product_name,
+        "unit_price": unit_price,
+        "labor_cost": labor_cost,
+        "cogs": cogs,
+        "marketing_cost": marketing_cost
+    })
 
-# Step 2: Enter monthly unit sales volumes
-st.header("Monthly Unit Sales Volume")
+# Step 3: Monthly sales volume input for each product line
 months = ["January", "February", "March", "April", "May", "June", 
           "July", "August", "September", "October", "November", "December"]
 
+st.header("Monthly Sales Volume")
 monthly_sales = {}
-for month in months:
-    monthly_sales[month] = st.number_input(f"{month} Sales Volume", min_value=0, value=0, key=f"sales_{month}")
+for i, product in enumerate(product_data):
+    st.subheader(f"Sales Volume for {product['name']}")
+    monthly_sales[product["name"]] = {}
+    for month in months:
+        monthly_sales[product["name"]][month] = st.number_input(
+            f"{month} Sales ({product['name']})", min_value=0, value=0, key=f"sales_{product['name']}_{month}")
 
-# Step 3: Calculate monthly subtotals
-st.header("Monthly Subtotals")
+# Step 4: Calculate and display monthly and yearly totals
+st.header("Monthly Subtotals & Yearly Totals")
 
-# Create a DataFrame to display monthly calculations
-data = {
-    "Month": months,
-    "Units Sold": [monthly_sales[month] for month in months],
-    "Revenue": [monthly_sales[month] * unit_price for month in months],
-    "Labor Cost": [monthly_sales[month] * labor_cost for month in months],
-    "COGS": [monthly_sales[month] * cogs for month in months],
-    "Marketing": [monthly_sales[month] * marketing_cost for month in months],
-}
+# Create a summary DataFrame
+summary_data = []
+for product in product_data:
+    product_name = product["name"]
+    for month in months:
+        units_sold = monthly_sales[product_name][month]
+        revenue = units_sold * product["unit_price"]
+        labor_cost = units_sold * product["labor_cost"]
+        cogs = units_sold * product["cogs"]
+        marketing = units_sold * product["marketing_cost"]
+        gross_profit = revenue - (labor_cost + cogs + marketing)
+        summary_data.append([product_name, month, units_sold, revenue, labor_cost, cogs, marketing, gross_profit])
 
-df = pd.DataFrame(data)
-df["Gross Profit"] = df["Revenue"] - (df["Labor Cost"] + df["COGS"] + df["Marketing"])
+# Convert to DataFrame for display
+df = pd.DataFrame(summary_data, columns=[
+    "Product Line", "Month", "Units Sold", "Revenue", 
+    "Labor Cost", "COGS", "Marketing", "Gross Profit"])
 
-# Display the DataFrame with monthly calculations
 st.dataframe(df)
 
-# Step 4: Display Yearly Totals
+# Step 5: Display Yearly Totals for Each Product Line
 st.header("Yearly Totals")
 
-total_revenue = df["Revenue"].sum()
-total_labor_cost = df["Labor Cost"].sum()
-total_cogs = df["COGS"].sum()
-total_marketing = df["Marketing"].sum()
-total_gross_profit = df["Gross Profit"].sum()
+yearly_totals = df.groupby("Product Line").sum().reset_index()
+st.write(yearly_totals[["Product Line", "Revenue", "Labor Cost", "COGS", "Marketing", "Gross Profit"]])
 
-st.write(f"**Total Revenue:** ${total_revenue}")
-st.write(f"**Total Labor Cost:** ${total_labor_cost}")
-st.write(f"**Total COGS:** ${total_cogs}")
-st.write(f"**Total Marketing Cost:** ${total_marketing}")
-st.write(f"**Total Gross Profit:** ${total_gross_profit}")
+# Step 6: Display Grand Total for All Product Lines
+st.subheader("Grand Total for All Product Lines")
+grand_total = yearly_totals[["Revenue", "Labor Cost", "COGS", "Marketing", "Gross Profit"]].sum()
+st.write(grand_total)
