@@ -34,8 +34,9 @@ for i, product in enumerate(product_data):
     st.subheader(f"Sales Volume for {product['name']}")
     monthly_sales[product["name"]] = {}
     for month in months:
+        key = f"sales_{i}_{month}"  # Unique key to avoid conflicts
         monthly_sales[product["name"]][month] = st.number_input(
-            f"{month} Sales ({product['name']})", min_value=0, value=0, key=f"sales_{product['name']}_{month}")
+            f"{month} Sales ({product['name']})", min_value=0, value=0, key=key)
 
 # Step 4: Calculate and display monthly and yearly totals
 st.header("Monthly Subtotals & Yearly Totals")
