@@ -68,4 +68,36 @@ for product in product_data:
         labor_cost = units_sold * product["labor_cost"]
         cogs = units_sold * product["cogs"]
         marketing = units_sold * product["marketing_cost"]
-        gross_profit = revenue - (labor_cost
+
+        # Corrected parentheses for gross profit and net profit calculation
+        gross_profit = revenue - (labor_cost + cogs + marketing)
+        net_profit = gross_profit - product["additional_expenses"] - (general_expense / num_products)
+
+        summary_data.append([
+            product_name, month, units_sold, revenue, labor_cost, 
+            cogs, marketing, gross_profit, net_profit
+        ])
+
+# Convert to DataFrame for display
+df = pd.DataFrame(summary_data, columns=[
+    "Product Line", "Month", "Units Sold", "Revenue", 
+    "Labor Cost", "COGS", "Marketing", "Gross Profit", "Net Profit"])
+
+st.dataframe(df)
+
+# Step 6: Display Yearly Totals for Each Product Line
+st.header("Yearly Totals")
+
+yearly_totals = df.groupby("Product Line").sum().reset_index()
+st.write(yearly_totals[[
+    "Product Line", "Revenue", "Labor Cost", "COGS", 
+    "Marketing", "Gross Profit", "Net Profit"
+]])
+
+# Step 7: Display Grand Total for All Product Lines
+st.subheader("Grand Total for All Product Lines")
+grand_total = yearly_totals[[
+    "Revenue", "Labor Cost", "COGS", "Marketing", 
+    "Gross Profit", "Net Profit"
+]].sum()
+st.write(grand_total)
